@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Location Not Applicable | HydroAlert Karnataka{% endblock %}
+{% block breadcrumb %}Location Outside Monitored Zones{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 720px; border-top: 4px solid var(--accent-pink); text-align: center;">
+    <div class="header-icon-badge" style="background: rgba(247, 37, 133, 0.15); color: var(--accent-pink); margin: 0 auto 1.4rem;">
+        ⚠️
+    </div>
+
+    <span style="display: inline-block; padding: 4px 14px; background: rgba(247, 37, 133, 0.15); border: 1px solid rgba(247, 37, 133, 0.3); border-radius: 999px; font-size: 0.8rem; font-weight: 700; color: #ff549a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+        Outside Surveillance Bounds
+    </span>
+
+    <h2 style="font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.8rem;">
+        {% if queried_location %}{{ queried_location }}{% else %}Current Location{% endif %} &mdash; Outside Surveillance Bounds
+    </h2>
+
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 580px; margin: 0 auto 2rem;">
+        This Early Warning System is specifically engineered and calibrated for the <strong>7 designated flood-vulnerability zones in the State of Karnataka</strong> (in compliance with KSNDMC and IMD hydrology parameters).
+    </p>
+
+    <!-- 7 Monitored Karnataka Zones Grid -->
+    <div style="background: rgba(14, 14, 26, 0.6); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1.6rem; text-align: left; margin-bottom: 2rem;">
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: #cbd5e1; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">
+            Please Select One of the 7 Supported Karnataka Regions:
+        </h4>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Bengaluru Urban">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">🌧️ Bengaluru Urban</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Dakshina Kannada">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">⛅ Dakshina Kannada</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Udupi">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">⛈️ Udupi</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Uttara Kannada">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">⛅ Uttar Kannada</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Shivamogga">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">🌧️ Shivamogga</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Chikkamagaluru">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">🌀 Chikkamagaluru</button>
+            </form>
+
+            <form action="{{ url_for('predict_manual') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="city_name" value="Kodagu">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem; padding: 7px 16px; border-radius: 999px;">🌧️ Kodagu</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: center;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="padding: 0.8rem 1.8rem;">
+            ← Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

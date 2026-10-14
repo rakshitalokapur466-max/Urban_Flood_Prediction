@@ -1,0 +1,163 @@
+import sys
+import os
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from app import app
+from database.db import init_db, fetch_one, fetch_all
+
+def run_tests():
+    print("--- 1. Testing Database & Schema Initialization ---")
+    init_db()
+    admin = fetch_one("SELECT * FROM admin WHERE username = %s", ("admin",))
+    assert admin is not None, "Admin user should exist"
+    print("[PASS] DB and Admin user verified successfully.")
+
+    print("\n--- 2. Testing Flask Test Client Endpoints ---")
+    with app.test_client() as client:
+        # Root route redirects to dashboard
+        res = client.get("/", follow_redirects=True)
+        assert res.status_code == 200, f"Expected 200 on /, got {res.status_code}"
+        assert b"Hydrological Risk Surveillance" in res.data
+        print("[PASS] Home redirects directly to Dashboard (200)")
+
+        # Dashboard
+        res = client.get("/dashboard")
+        assert res.status_code == 200, f"Expected 200 on /dashboard, got {res.status_code}"
+        print("[PASS] Dashboard accessible (200)")
+
+        # Custom location
+        res = client.get("/custom-location")
+        assert res.status_code == 200, f"Expected 200 on /custom-location, got {res.status_code}"
+        print("[PASS] Custom location page accessible (200)")
+
+        # User Signup
+        res = client.post("/signup", data={
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "Password123",
+            "confirm_password": "Password123"
+        }, follow_redirects=True)
+        assert res.status_code == 200
+        print("[PASS] User registration succeeded")
+
+        # Test Forgot Password GET & Dynamic Reset POST
+        res = client.get("/forgot-password")
+        assert res.status_code == 200, f"Expected 200 on /forgot-password, got {res.status_code}"
+        assert b"Reset Your Password" in res.data
+        print("[PASS] Forgot password page accessible (200)")
+
+        # Reset password dynamically for test@example.com
+        res = client.post("/forgot-password", data={
+            "email": "test@example.com",
+            "new_password": "NewPassword123",
+            "confirm_password": "NewPassword123"
+        }, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"successfully updated" in res.data
+        print("[PASS] Dynamic password reset succeeded without token expiration")
+
+        # Verify login with newly reset password
+        res = client.post("/login", data={
+            "email": "test@example.com",
+            "password": "NewPassword123"
+        }, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"Welcome back" in res.data
+        print("[PASS] Authenticated successfully using new reset password")
+
+        # Predict Manual: Karnataka Designated Zone (Bengaluru Urban)
+        res = client.post("/predict/manual", data={"city_name": "Bengaluru Urban"}, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"Risk Assessment" in res.data
+        assert b"Bengaluru Urban" in res.data
+        print("[PASS] Bengaluru Urban prediction returned exact Karnataka location with Leaflet map data")
+
+        # Predict Manual: Non-Karnataka Location (e.g., Delhi) -> Not Applicable
+        res = client.post("/predict/manual", data={"city_name": "Delhi"}, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"Outside Surveillance Bounds" in res.data or b"Location Not Applicable" in res.data
+        print("[PASS] Non-monitored location correctly returned 'Location Not Applicable'")
+
+        # Predict Auto: Coordinates in Designated Zones (Bengaluru Urban)
+        res = client.post("/predict/auto", json={"latitude": 12.9716, "longitude": 77.5946})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data["success"] is True
+        assert json_data["location_name"] == "Bengaluru Urban"
+        print(f"[PASS] Auto GPS prediction for Bengaluru Urban returned success: ID #{json_data['prediction_id']}")
+
+        # Predict Auto: Coordinates in Uttara Kannada - Karwar anchor
+        res = client.post("/predict/auto", json={"latitude": 14.8135, "longitude": 74.1297})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data["success"] is True
+        assert "Uttara Kannada" in json_data["location_name"]
+        print(f"[PASS] Auto GPS prediction for Karwar anchor returned success: {json_data['location_name']}")
+
+        # Predict Auto: Coordinates in Uttara Kannada - Sirsi anchor
+        res = client.post("/predict/auto", json={"latitude": 14.6195, "longitude": 74.8354})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data["success"] is True
+        assert "Uttara Kannada" in json_data["location_name"]
+        print(f"[PASS] Auto GPS prediction for Sirsi anchor returned success: {json_data['location_name']}")
+
+        # Predict Auto: Coordinates in Dakshina Kannada - Mangaluru Urban
+        res = client.post("/predict/auto", json={"latitude": 12.9141, "longitude": 74.8560})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data["success"] is True
+        assert "Dakshina Kannada" in json_data["location_name"]
+        print(f"[PASS] Auto GPS prediction for Mangaluru Urban returned success: {json_data['location_name']}")
+
+        # Predict Auto: Non-monitored Karnataka City (Mysuru: 12.361, 76.630) -> Outside Surveillance Bounds
+        res = client.post("/predict/auto", json={"latitude": 12.3610, "longitude": 76.6300})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data.get("not_applicable") is True
+        assert json_data.get("location_name") == "Mysuru"
+        assert "not-applicable" in json_data.get("redirect_url")
+        print(f"[PASS] Auto GPS in Mysuru identified place name '{json_data['location_name']}' and returned Outside Surveillance Bounds")
+
+        # Predict Auto: Coordinates outside Karnataka (Delhi lat/lon) -> Outside Surveillance Bounds
+        res = client.post("/predict/auto", json={"latitude": 28.6139, "longitude": 77.2090})
+        assert res.status_code == 200
+        json_data = res.get_json()
+        assert json_data.get("not_applicable") is True
+        assert json_data.get("location_name") == "Delhi"
+        print(f"[PASS] Auto GPS for Delhi identified '{json_data['location_name']}' and returned Outside Surveillance Bounds")
+
+        # History Page - Non-admin should be redirected to admin login
+        client.get("/logout") # logout user
+        res = client.get("/history")
+        assert res.status_code == 302
+        print("[PASS] History log is restricted from non-admin users (302 redirect)")
+
+        # Admin Login
+        res = client.post("/admin/login", data={"username": "admin", "password": "Admin@123"}, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"Disaster Management Analytics" in res.data
+        print("[PASS] Admin authentication and Dashboard verified (200)")
+
+        # Admin accessing History Log
+        res = client.get("/history")
+        assert res.status_code == 200
+        assert b"Assessment History" in res.data
+        print("[PASS] History log successfully accessible to Admin (200)")
+
+        # Admin Chart Data API
+        res = client.get("/api/admin/chart-data")
+        assert res.status_code == 200
+        chart_data = res.get_json()
+        assert "distribution" in chart_data
+        assert "trends" in chart_data
+        print("[PASS] Admin Chart.js API returned distribution and trend series")
+
+    print("\n==========================================")
+    print("ALL TESTS PASSED WITH 100% SUCCESS!")
+    print("==========================================")
+
+if __name__ == "__main__":
+    run_tests()

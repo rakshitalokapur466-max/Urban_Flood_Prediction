@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Resident Sign In | HydroAlert FloodGuard{% endblock %}
+{% block breadcrumb %}Resident Sign In{% endblock %}
+
+{% block content %}
+<div class="form-card" style="border-top: 4px solid var(--primary-blue);">
+    <div class="form-header">
+        <div class="header-icon-badge" style="background: rgba(67, 97, 238, 0.15); color: var(--primary-blue);">
+            🔐
+        </div>
+        <h2>Sign In to HydroAlert</h2>
+        <p>Access your real-time risk logs and municipal warning feeds</p>
+    </div>
+
+    <form action="{{ url_for('login') }}" method="POST">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <div class="input-wrapper">
+                <span class="input-icon">✉️</span>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    placeholder="name@example.com" 
+                    required 
+                    autocomplete="email" 
+                    autofocus
+                >
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label for="password" style="margin-bottom: 0;">Password</label>
+                <!-- Dynamic Forgot Password Link -->
+                <a href="{{ url_for('forgot_password') }}" style="color: var(--accent-pink); font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+                    Forgot Password?
+                </a>
+            </div>
+            <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="••••••••" 
+                    required 
+                    autocomplete="current-password"
+                >
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.8rem; padding: 1rem;">
+            <span>🚀 Sign In to Dashboard</span>
+        </button>
+    </form>
+
+    <div style="margin-top: 2rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+        Don't have an account yet? 
+        <a href="{{ url_for('signup') }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600;">
+            Register Account
+        </a>
+        <br/><br/>
+        <a href="{{ url_for('admin_login') }}" style="color: var(--text-dim); text-decoration: underline; font-size: 0.85rem;">
+            Administrative Access Portal &rarr;
+        </a>
+    </div>
+</div>
+{% endblock %}

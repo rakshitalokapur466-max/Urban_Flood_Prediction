@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | HydroAlert FloodGuard{% endblock %}
+{% block breadcrumb %}Account Registration{% endblock %}
+
+{% block content %}
+<div class="form-card" style="border-top: 4px solid var(--accent-pink);">
+    <div class="form-header">
+        <div class="header-icon-badge" style="background: rgba(247, 37, 133, 0.15); color: var(--accent-pink);">
+            📝
+        </div>
+        <h2>Create Resident Account</h2>
+        <p>Register to monitor regional risks and receive early warning alerts</p>
+    </div>
+
+    <form action="{{ url_for('signup') }}" method="POST">
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <div class="input-wrapper">
+                <span class="input-icon">👤</span>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    placeholder="Jane Doe" 
+                    required 
+                    autocomplete="name" 
+                    autofocus
+                >
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <div class="input-wrapper">
+                <span class="input-icon">✉️</span>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    placeholder="jane@example.com" 
+                    required 
+                    autocomplete="email"
+                >
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="Minimum 6 characters" 
+                    required 
+                    minlength="6" 
+                    autocomplete="new-password"
+                >
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🛡️</span>
+                <input 
+                    type="password" 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    class="form-control" 
+                    placeholder="Re-enter password" 
+                    required 
+                    minlength="6" 
+                    autocomplete="new-password"
+                >
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-accent btn-block" style="margin-top: 1.8rem; padding: 1rem;">
+            <span>✨ Complete Registration</span>
+        </button>
+    </form>
+
+    <div style="margin-top: 2rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+        Already registered? 
+        <a href="{{ url_for('login') }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600;">
+            Sign in here
+        </a>
+    </div>
+</div>
+{% endblock %}

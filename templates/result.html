@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Flood Assessment: {{ pred.location_name }} | HydroAlert{% endblock %}
+{% block breadcrumb %}Assessment Report &bull; {{ pred.location_name }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em;">
+            Risk Assessment: {{ pred.location_name }}
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.2rem;">
+            Spatial Coordinates: {{ "%.4f"|format(pred.latitude) }}, {{ "%.4f"|format(pred.longitude) }} &bull; Timestamp: {{ pred.created_at }}
+        </p>
+        {% if zone_data and zone_data.basin_description %}
+        <div style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 8px; background: rgba(67, 97, 238, 0.15); border: 1px solid rgba(67, 97, 238, 0.35); border-radius: 999px; padding: 4px 14px; font-size: 0.85rem; color: #a5b4fc; font-weight: 600;">
+            <span>🌊 Hydrological Basin:</span>
+            <strong style="color: #ffffff;">{{ zone_data.basin_description }}</strong>
+        </div>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <span>🔄 Refresh</span>
+        </a>
+        <button onclick="window.print()" class="btn btn-primary">
+            <span>🖨️ Export Report</span>
+        </button>
+    </div>
+</div>
+
+<!-- Dynamic Risk Banner -->
+<div class="risk-banner {{ theme.banner_class }}">
+    <div class="risk-info">
+        <div style="font-size: 0.82rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: {{ theme.hex }};">
+            XGBoost Classification Result
+        </div>
+        <h2>{{ pred.risk_level }}</h2>
+        <p>
+            Evaluated under prevailing meteorological metrics with a classification certainty of <strong>{{ "%.1f"|format(pred.probability) }}%</strong>.
+            {% if pred.risk_level == 'High Risk' %}
+                <br/><strong style="color: #ff94c2;">🚨 Critical Emergency Alert Active: Evacuation protocols and automated warnings dispatched.</strong>
+            {% endif %}
+        </p>
+    </div>
+    <div>
+        <span class="status-badge {{ theme.badge_class }}" style="font-size: 1.15rem; padding: 0.65rem 1.8rem;">
+            ● {{ pred.risk_level }} ({{ "%.1f"|format(pred.probability) }}%)
+        </span>
+    </div>
+</div>
+
+<!-- Meteorological Metric Grid -->
+<div class="metrics-grid">
+    <div class="metric-card" style="border-left: 4px solid {{ theme.hex }};">
+        <div class="metric-icon">🌧️</div>
+        <div class="metric-label">Precipitation</div>
+        <div class="metric-val" style="color: {{ theme.hex }};">{{ pred.rainfall }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">mm</span></div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">💧</div>
+        <div class="metric-label">Relative Humidity</div>
+        <div class="metric-val">{{ pred.humidity }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">%</span></div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">🌡️</div>
+        <div class="metric-label">Temperature</div>
+        <div class="metric-val">{{ pred.temperature }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">°C</span></div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">💨</div>
+        <div class="metric-label">Wind Velocity</div>
+        <div class="metric-val">{{ pred.wind_speed }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">m/s</span></div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">⏲️</div>
+        <div class="metric-label">Atmospheric Pressure</div>
+        <div class="metric-val">{{ pred.pressure }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">hPa</span></div>
+    </div>
+</div>
+
+<!-- Leaflet Interactive Map -->
+<div class="table-card" style="margin-bottom: 2.2rem; padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 8px;">
+        <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0;">GIS Spatial Threat Zone</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                OpenStreetMap tile layer with color-coded risk radius centered on {{ pred.location_name }}
+            </p>
+        </div>
+        <span style="font-size: 0.8rem; padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid var(--card-border);">
+            Layer: OpenStreetMap Standard
+        </span>
+    </div>
+    <div id="map"></div>
+</div>
+
+<!-- Contextual Safety Recommendations -->
+<div class="table-card" style="border-left: 5px solid {{ theme.hex }};">
+    <h3 style="color: {{ theme.hex }}; font-size: 1.35rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px;">
+        <span>🛡️</span> Actionable Safety & Evacuation Advisory
+    </h3>
+    <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.9rem; padding: 0;">
+        {% for rec in recommendations %}
+            <li style="padding: 0.9rem 1.2rem; background: rgba(14, 14, 26, 0.7); border-left: 4px solid {{ theme.hex }}; border-radius: var(--radius-sm); font-size: 0.95rem; line-height: 1.5;">
+                {{ rec }}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const lat = parseFloat("{{ pred.latitude }}");
+        const lon = parseFloat("{{ pred.longitude }}");
+        const locationName = "{{ pred.location_name }}";
+        const riskLevel = "{{ pred.risk_level }}";
+        const rainfall = parseFloat("{{ pred.rainfall }}");
+        const prob = parseFloat("{{ pred.probability }}");
+        const basinDesc = "{{ zone_data.basin_description if zone_data else '' }}";
+
+        renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, prob, basinDesc);
+    });
+</script>
+{% endblock %}
