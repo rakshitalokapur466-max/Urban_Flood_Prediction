@@ -407,9 +407,9 @@ def result_view(prediction_id):
 
     # Theme colors for the UI banner & Leaflet circle
     theme_colors = {
-        "Low Risk": {"hex": "#10b981", "badge_class": "badge-low", "banner_class": "banner-low"},
-        "Medium Risk": {"hex": "#f59e0b", "badge_class": "badge-med", "banner_class": "banner-med"},
-        "High Risk": {"hex": "#ef4444", "badge_class": "badge-high", "banner_class": "banner-high"}
+        "Low Risk": {"hex": "#10b981", "badge_class": "badge-low", "banner_class": "banner-low", "text_class": "text-risk-low", "border_class": "border-risk-low"},
+        "Medium Risk": {"hex": "#f59e0b", "badge_class": "badge-med", "banner_class": "banner-med", "text_class": "text-risk-med", "border_class": "border-risk-med"},
+        "High Risk": {"hex": "#ef4444", "badge_class": "badge-high", "banner_class": "banner-high", "text_class": "text-risk-high", "border_class": "border-risk-high"}
     }
     theme = theme_colors.get(risk_level, theme_colors["Low Risk"])
 

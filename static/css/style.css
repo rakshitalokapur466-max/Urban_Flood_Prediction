@@ -1057,3 +1057,12 @@ body {
   .choice-grid { grid-template-columns: 1fr; }
   #map, #admin-map { height: 350px; }
 }
+
+/* Dynamic Risk Text & Border Theme Utilities */
+.text-risk-low { color: #10b981 !important; }
+.text-risk-med { color: #f59e0b !important; }
+.text-risk-high { color: #f72585 !important; }
+.border-risk-low { border-left: 4px solid #10b981 !important; }
+.border-risk-med { border-left: 4px solid #f59e0b !important; }
+.border-risk-high { border-left: 4px solid #f72585 !important; }
+
