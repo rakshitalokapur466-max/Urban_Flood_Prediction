@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Urban Flood Early Warning System | HydroAlert{% endblock %}</title>
+    <title>{% block title %}Urban Flood Early Warning System | UrbanFlood{% endblock %}</title>
     
     <!-- Google Fonts: Poppins (300, 400, 500, 600, 700, 800) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,11 +113,12 @@
                     </div>
                 </div>
 
-               <div class="header-right">
-                    <div class="header-status">
-                        <!--<span class="header-status-dot"></span>-->
-                        <!--<span>ML Engine Online</span>-->
-                    </div>
+                <div class="header-right">
+                    <!-- Live Emergency Alerts Center Button -->
+                    <button type="button" class="btn btn-secondary" onclick="openAlertsModal()" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.12); color: #ff6b8b;">
+                        <span style="display:inline-block; animation: pulse 1.5s infinite;">🚨</span>
+                        <span>Emergency Alerts</span>
+                    </button>
 
                     {% if session.get('user_id') %}
                         <a href="{{ url_for('dashboard') }}" class="user-profile-badge">
@@ -162,6 +163,29 @@
             <main class="page-container">
                 {% block content %}{% endblock %}
             </main>
+        </div>
+    </div>
+
+    <!-- Emergency Alerts Modal Overlay -->
+    <div id="alertsModal" class="modal-overlay">
+        <div class="modal-container" style="max-width: 680px;">
+            <div class="modal-header" style="border-bottom: 1px solid var(--card-border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.6rem;">🚨</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #ffffff;">Live Disaster Warnings & Alerts</h3>
+                        <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">Real-time early warning broadcasts dispatched across Karnataka surveillance zones</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('alertsModal')" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+            </div>
+            <div id="alertsModalContent" style="padding: 1.2rem 0; max-height: 420px; overflow-y: auto;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading latest emergency alerts...</div>
+            </div>
+            <div style="border-top: 1px solid var(--card-border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; color: var(--text-dim);">HydroAlert &bull; Karnataka Disaster Management Early Warning</span>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('alertsModal')">Close</button>
+            </div>
         </div>
     </div>
 

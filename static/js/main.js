@@ -86,6 +86,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Open and populate live Emergency Alerts Modal
+    window.openAlertsModal = async function() {
+        window.openModal("alertsModal");
+        const container = document.getElementById("alertsModalContent");
+        if (!container) return;
+
+        try {
+            const resp = await fetch("/api/alerts/recent");
+            const data = await resp.json();
+            if (data.success && data.alerts && data.alerts.length > 0) {
+                container.innerHTML = data.alerts.map(a => `
+                    <div style="background: rgba(14, 14, 26, 0.7); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <div style="font-weight: 700; color: #ffffff; font-size: 14px;">
+                                🚨 ${a.location_name} &bull; <span style="color: #ef4444;">${a.risk_level}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                Rainfall: <strong>${a.rainfall} mm</strong> &bull; Recipient: <strong>${a.recipient_email}</strong>
+                            </div>
+                            <div style="font-size: 11px; color: #34d399; margin-top: 3px;">
+                                Status: ${a.status}
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-dim); text-align: right;">
+                            ${a.created_at || 'Recent'}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2.5rem 1rem;">
+                        <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">🛡️</div>
+                        <h4 style="color: #ffffff; margin-bottom: 0.4rem;">No Critical Alerts Active</h4>
+                        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 420px; margin: 0 auto;">
+                            All 7 Karnataka surveillance basins are currently operating within safe hydrological parameters. Early warnings trigger automatically during High Risk events.
+                        </p>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            container.innerHTML = `<div style="color: #ef4444; padding: 1rem; text-align: center;">Could not load alerts feed.</div>`;
+        }
+    };
+
     // -------------------------------------------------------------
     // 4. Auto GPS Geolocation Handler
     // -------------------------------------------------------------

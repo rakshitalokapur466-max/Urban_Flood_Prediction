@@ -100,7 +100,7 @@
 </div>
 
 <!-- Contextual Safety Recommendations -->
-<div class="table-card" style="border-left: 5px solid {{ theme.hex }};">
+<div class="table-card" style="border-left: 5px solid {{ theme.hex }}; margin-bottom: 2rem;">
     <h3 style="color: {{ theme.hex }}; font-size: 1.35rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px;">
         <span>🛡️</span> Actionable Safety & Evacuation Advisory
     </h3>
@@ -112,6 +112,117 @@
         {% endfor %}
     </ul>
 </div>
+
+<!-- Emergency Alert Messaging & Notification Center -->
+{% if pred.risk_level == 'High Risk' %}
+<div class="table-card" style="border-top: 4px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(14, 14, 26, 0.85) 100%); margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.4rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; color: #ff6b8b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: pulse 1.2s infinite;"></span>
+                Active Emergency Alert Dispatch
+            </div>
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin: 0;">
+                Emergency Broadcast System &bull; {{ pred.location_name }}
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+                Automated multi-channel early warning message pipeline for residents and district authorities.
+            </p>
+        </div>
+        <div style="text-align: right;">
+            <span class="status-badge badge-high" style="font-size: 0.9rem; padding: 6px 16px;">
+                🚨 High Risk Alert Active
+            </span>
+        </div>
+    </div>
+
+    <!-- Alert Broadcast Status Banner -->
+    <div style="background: rgba(14, 14, 26, 0.7); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); padding: 1.2rem; margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600;">Broadcast Status</div>
+            <div id="alertStatusBadge" style="font-size: 0.95rem; font-weight: 700; color: #34d399; margin-top: 3px;">
+                {% if alert_record %}
+                    {{ alert_record.status }}
+                {% else %}
+                    Active (In-App & Emergency Broadcast Logged)
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600;">Primary Recipient</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: #f1f5f9; margin-top: 3px;">
+                {% if alert_record and alert_record.recipient_email %}
+                    {{ alert_record.recipient_email }}
+                {% elif session.get('user_email') %}
+                    {{ session.get('user_email') }}
+                {% else %}
+                    Registered Residents & Disaster Control
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600;">Trigger Timestamp</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: #f1f5f9; margin-top: 3px;">
+                {{ alert_record.created_at if alert_record else pred.created_at }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Direct Alert Dispatch Form -->
+    <div style="background: rgba(14, 14, 26, 0.9); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1.4rem; margin-bottom: 1.5rem;">
+        <h4 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px;">
+            <span>📨</span> Send Alert Message to Specific User / Alternate Email
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Dispatch an emergency flood warning report directly to your personal email address or municipal responders.
+        </p>
+
+        <form id="directAlertForm" onsubmit="handleSendAlert(event)" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 260px;">
+                <input 
+                    type="email" 
+                    id="directAlertEmail" 
+                    class="form-control" 
+                    placeholder="Enter recipient email (e.g., resident@gmail.com)..." 
+                    value="{{ session.get('user_email', '') }}" 
+                    required
+                    style="padding: 0.75rem 1rem; font-size: 0.92rem;"
+                >
+            </div>
+            <button type="submit" id="btnSendAlert" class="btn btn-accent" style="padding: 0.75rem 1.6rem; font-size: 0.92rem;">
+                <span>⚡ Send Alert Message Now</span>
+            </button>
+        </form>
+        <div id="directAlertFeedback" style="display: none; margin-top: 1rem;" class="alert"></div>
+
+        <!-- Real Email Delivery Helper -->
+        <!--<div style="margin-top: 1.2rem; padding: 12px 16px; background: rgba(67, 97, 238, 0.08); border: 1px solid rgba(67, 97, 238, 0.25); border-radius: 8px; font-size: 0.84rem; color: #cbd5e1; line-height: 1.6;">
+            <strong style="color: #60a5fa;">💡 How Live Inbox Delivery Works:</strong><br/>
+            To physically receive the flood alert in your Gmail/email inbox, configure your sender credentials in <code>E:\MajorProject\.env</code>:
+            <code style="display: block; margin: 6px 0; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 6px; color: #a5b4fc; font-family: monospace;">
+                MAIL_USERNAME=your_email@gmail.com<br/>
+                MAIL_PASSWORD=your_16_char_google_app_password
+            </code>
+            <em>(Generate a free 16-letter App Password at <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #93c5fd; text-decoration: underline;">myaccount.google.com/apppasswords</a> and restart <code>python app.py</code>)</em>
+        </div>
+    </div>-->
+
+    <!-- Ready-to-Copy Urgent SMS Broadcast -->
+    <!--<div style="background: rgba(14, 14, 26, 0.7); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1.2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em;">
+                📱 Pre-Formatted Urgent SMS Broadcast:
+            </span>
+            <button type="button" onclick="copySmsText()" id="btnCopySms" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 999px;">
+                📋 Copy SMS Alert
+            </button>
+        </div>
+        <div id="smsAlertText" style="font-family: monospace; font-size: 0.88rem; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; color: #f87171; border: 1px dashed rgba(239, 68, 68, 0.35); line-height: 1.5;">
+🚨 EMERGENCY FLOOD ALERT: High Risk inundation detected in {{ pred.location_name }} ({{ "%.1f"|format(pred.probability) }}% confidence, {{ pred.rainfall }}mm rainfall). Move to higher ground immediately. Evacuate basements and underpasses. Follow State Disaster Management orders. - HydroAlert Karnataka
+        </div>
+    </div>
+</div>-->
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -128,5 +239,81 @@
 
         renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, prob, basinDesc);
     });
+
+    async function handleSendAlert(e) {
+        e.preventDefault();
+        const emailInput = document.getElementById("directAlertEmail");
+        const btn = document.getElementById("btnSendAlert");
+        const feedback = document.getElementById("directAlertFeedback");
+        const badge = document.getElementById("alertStatusBadge");
+
+        const email = emailInput ? emailInput.value.trim() : "";
+        if (!email) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Transmitting Alert...</span>`;
+        feedback.style.display = "none";
+
+        try {
+            const resp = await fetch("/api/alerts/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    prediction_id: {{ pred.id }},
+                    email: email
+                })
+            });
+
+            const result = await resp.json();
+            feedback.style.display = "block";
+            if (result.success && result.email_sent) {
+                feedback.className = "alert alert-success";
+                feedback.innerHTML = `✅ <strong>Live Email Delivered!</strong> The flood warning has been physically sent to <strong>${result.recipient}</strong> via SMTP. Please check your inbox or spam folder.`;
+                if (badge && result.status) {
+                    badge.innerText = result.status;
+                }
+            } else if (result.success && !result.email_sent) {
+                feedback.className = "alert alert-warning";
+                feedback.innerHTML = `
+                    <div style="line-height: 1.5;">
+                        <strong style="color: #f59e0b;">⚠️ Notice: Alert Saved In-App, but physical email was NOT sent to your inbox.</strong><br/>
+                        <span>Reason: <strong>Sender SMTP credentials (<code>MAIL_USERNAME</code> and <code>MAIL_PASSWORD</code>) are not configured in your <code>.env</code> file.</strong></span><br/>
+                        <span style="font-size: 0.85rem; margin-top: 5px; display: inline-block;">
+                            👉 To receive actual emails in your Gmail inbox, open <code>.env</code> in your project, enter your Gmail and 16-character App Password, and restart the app.
+                        </span>
+                    </div>
+                `;
+                if (badge && result.status) {
+                    badge.innerText = result.status;
+                }
+            } else {
+                feedback.className = "alert alert-danger";
+                feedback.innerText = result.error || "Failed to transmit alert message.";
+            }
+        } catch (err) {
+            feedback.style.display = "block";
+            feedback.className = "alert alert-danger";
+            feedback.innerText = "Network error encountered while communicating with alert service.";
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span>⚡ Send Alert Message Now</span>`;
+        }
+    }
+
+    function copySmsText() {
+        const textElem = document.getElementById("smsAlertText");
+        if (!textElem) return;
+        navigator.clipboard.writeText(textElem.innerText.trim()).then(() => {
+            const btn = document.getElementById("btnCopySms");
+            if (btn) {
+                const old = btn.innerHTML;
+                btn.innerHTML = "✅ Copied to Clipboard!";
+                setTimeout(() => { btn.innerHTML = old; }, 2200);
+            }
+        });
+    }
 </script>
 {% endblock %}

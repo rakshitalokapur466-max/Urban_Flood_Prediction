@@ -155,6 +155,43 @@ def run_tests():
         assert "trends" in chart_data
         print("[PASS] Admin Chart.js API returned distribution and trend series")
 
+        # -------------------------------------------------------------
+        # 3. Testing Emergency Alert Messaging & Notifications
+        # -------------------------------------------------------------
+        print("\n--- 3. Testing Emergency Alert Messaging & Notifications ---")
+        # High Risk prediction for Kodagu (Madikeri)
+        res = client.post("/predict/manual", data={"city_name": "Kodagu"}, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"High Risk" in res.data
+        assert b"Emergency Broadcast System" in res.data
+        print("[PASS] High Risk prediction in Kodagu activated Emergency Alert UI section")
+
+        # Verify alert record was logged in the alerts database table
+        recent_alert = fetch_one("SELECT * FROM alerts WHERE location_name LIKE %s ORDER BY id DESC LIMIT 1", ("%Kodagu%",))
+        assert recent_alert is not None, "Alert record should be stored in alerts table"
+        assert recent_alert["risk_level"] == "High Risk"
+        print(f"[PASS] Alert successfully logged in database: #{recent_alert['id']} for {recent_alert['location_name']} -> {recent_alert['status']}")
+
+        # Test Direct Alert Dispatch API (/api/alerts/send)
+        res = client.post("/api/alerts/send", json={
+            "prediction_id": recent_alert["prediction_id"],
+            "email": "resident.test@karnataka.gov.in"
+        })
+        assert res.status_code == 200
+        alert_json = res.get_json()
+        assert alert_json["success"] is True
+        assert alert_json["recipient"] == "resident.test@karnataka.gov.in"
+        assert "sms_text" in alert_json
+        print(f"[PASS] /api/alerts/send directly dispatched alert to: {alert_json['recipient']}")
+
+        # Test Recent Alerts Feed API (/api/alerts/recent)
+        res = client.get("/api/alerts/recent")
+        assert res.status_code == 200
+        feed_json = res.get_json()
+        assert feed_json["success"] is True
+        assert len(feed_json["alerts"]) > 0
+        print(f"[PASS] /api/alerts/recent returned {len(feed_json['alerts'])} live emergency warning broadcasts")
+
     print("\n==========================================")
     print("ALL TESTS PASSED WITH 100% SUCCESS!")
     print("==========================================")

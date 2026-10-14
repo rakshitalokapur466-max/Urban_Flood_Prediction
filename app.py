@@ -283,8 +283,9 @@ def predict_auto():
         "probability": prob
     }, recipient_email=user_email)
 
-    # Persist prediction in database
+    # Persist prediction in database first
     user_id = session.get("user_id")
+    is_high_risk = (risk_level == "High Risk")
     pred_id = execute_query(
         """
         INSERT INTO predictions 
@@ -303,15 +304,27 @@ def predict_auto():
             weather["pressure"],
             risk_level,
             prob,
-            1 if alert_info["alert_triggered"] else 0
+            1 if is_high_risk else 0
         )
     )
+
+    # Process and record alert notification for users
+    user_email = session.get("user_email")
+    alert_info = process_flood_alert({
+        "location_name": weather["location_name"],
+        "rainfall": weather["rainfall"],
+        "humidity": weather["humidity"],
+        "pressure": weather["pressure"],
+        "risk_level": risk_level,
+        "probability": prob
+    }, recipient_email=user_email, user_id=user_id, prediction_id=pred_id)
 
     if request.is_json:
         return jsonify({
             "success": True,
             "prediction_id": pred_id,
             "location_name": weather["location_name"],
+            "alert_status": alert_info["status"],
             "redirect_url": url_for("result_view", prediction_id=pred_id)
         })
 
@@ -339,19 +352,9 @@ def predict_manual():
     ml_result = predict_flood_risk(weather)
     risk_level = ml_result["risk_level"]
     prob = ml_result["probability"]
+    is_high_risk = (risk_level == "High Risk")
 
-    # Trigger alert pipeline if High Risk
-    user_email = session.get("user_email")
-    alert_info = process_flood_alert({
-        "location_name": weather["location_name"],
-        "rainfall": weather["rainfall"],
-        "humidity": weather["humidity"],
-        "pressure": weather["pressure"],
-        "risk_level": risk_level,
-        "probability": prob
-    }, recipient_email=user_email)
-
-    # Persist record in database
+    # Persist record in database first
     user_id = session.get("user_id")
     pred_id = execute_query(
         """
@@ -371,9 +374,20 @@ def predict_manual():
             weather["pressure"],
             risk_level,
             prob,
-            1 if alert_info["alert_triggered"] else 0
+            1 if is_high_risk else 0
         )
     )
+
+    # Trigger alert pipeline and record notification
+    user_email = session.get("user_email")
+    alert_info = process_flood_alert({
+        "location_name": weather["location_name"],
+        "rainfall": weather["rainfall"],
+        "humidity": weather["humidity"],
+        "pressure": weather["pressure"],
+        "risk_level": risk_level,
+        "probability": prob
+    }, recipient_email=user_email, user_id=user_id, prediction_id=pred_id)
 
     return redirect(url_for("result_view", prediction_id=pred_id))
 
@@ -381,7 +395,7 @@ def predict_manual():
 def result_view(prediction_id):
     """
     Displays full assessment result with dynamic risk styling,
-    weather metrics grid, Leaflet map canvas, and safety recommendations.
+    weather metrics grid, Leaflet map canvas, emergency alert status, and recommendations.
     """
     pred = fetch_one("SELECT * FROM predictions WHERE id = %s", (prediction_id,))
     if not pred:
@@ -400,14 +414,81 @@ def result_view(prediction_id):
     theme = theme_colors.get(risk_level, theme_colors["Low Risk"])
 
     zone_data = match_karnataka_zone(city_name=pred["location_name"])
+    
+    # Retrieve the alert broadcast record for this assessment
+    alert_record = fetch_one(
+        "SELECT * FROM alerts WHERE prediction_id = %s ORDER BY id DESC LIMIT 1",
+        (prediction_id,)
+    )
 
     return render_template(
         "result.html",
         pred=pred,
         recommendations=recommendations,
         theme=theme,
-        zone_data=zone_data
+        zone_data=zone_data,
+        alert_record=alert_record
     )
+
+@app.route("/api/alerts/send", methods=["POST"])
+def send_alert_direct():
+    """
+    Directly dispatches an urgent flood alert email to a specified recipient email address.
+    """
+    if request.is_json:
+        data = request.get_json() or {}
+    else:
+        data = request.form
+
+    prediction_id = data.get("prediction_id")
+    recipient_email = data.get("email", "").strip()
+
+    if not recipient_email or "@" not in recipient_email:
+        if request.is_json:
+            return jsonify({"success": False, "error": "Please provide a valid recipient email address."}), 400
+        flash("Please provide a valid recipient email address.", "danger")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    pred = None
+    if prediction_id:
+        try:
+            pred = fetch_one("SELECT * FROM predictions WHERE id = %s", (int(prediction_id),))
+        except (ValueError, TypeError):
+            pass
+
+    if not pred:
+        pred = fetch_one("SELECT * FROM predictions ORDER BY id DESC LIMIT 1")
+
+    if not pred:
+        if request.is_json:
+            return jsonify({"success": False, "error": "No assessment record found."}), 404
+        flash("No assessment record found to dispatch alert.", "warning")
+        return redirect(url_for("dashboard"))
+
+    alert_info = process_flood_alert({
+        "location_name": pred["location_name"],
+        "rainfall": pred["rainfall"],
+        "humidity": pred["humidity"],
+        "temperature": pred["temperature"],
+        "pressure": pred["pressure"],
+        "risk_level": pred["risk_level"],
+        "probability": pred["probability"]
+    }, recipient_email=recipient_email, user_id=session.get("user_id"), prediction_id=pred["id"])
+
+    return jsonify({
+        "success": True,
+        "message": f"Emergency alert broadcast triggered for {recipient_email}. Status: {alert_info['status']}",
+        "email_sent": alert_info["email_sent"],
+        "status": alert_info["status"],
+        "recipient": recipient_email,
+        "sms_text": alert_info.get("sms_text", "")
+    })
+
+@app.route("/api/alerts/recent")
+def recent_alerts():
+    """Returns recent emergency alerts for the notification modal."""
+    alerts = fetch_all("SELECT * FROM alerts ORDER BY id DESC LIMIT 15")
+    return jsonify({"success": True, "alerts": alerts})
 
 @app.route("/history")
 @admin_required

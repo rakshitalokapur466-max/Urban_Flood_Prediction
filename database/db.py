@@ -214,6 +214,23 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             );
             """)
+
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NULL,
+                prediction_id INTEGER NULL,
+                recipient_email TEXT NOT NULL,
+                location_name TEXT NOT NULL,
+                risk_level TEXT NOT NULL,
+                rainfall REAL NOT NULL,
+                status TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (prediction_id) REFERENCES predictions(id) ON DELETE CASCADE
+            );
+            """)
             conn.commit()
 
             # Seed default admin if missing
@@ -265,6 +282,23 @@ def init_db():
                 alert_triggered BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT fk_pred_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """)
+
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                prediction_id INT NULL,
+                recipient_email VARCHAR(120) NOT NULL,
+                location_name VARCHAR(100) NOT NULL,
+                risk_level VARCHAR(50) NOT NULL,
+                rainfall FLOAT NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_alert_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                CONSTRAINT fk_alert_pred FOREIGN KEY (prediction_id) REFERENCES predictions(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
             conn.commit()
