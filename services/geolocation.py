@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 # Spatial reference catalog of non-monitored Karnataka districts, taluks, and Indian metro centers
 KNOWN_SPATIAL_LOCATIONS = [
     # Karnataka Districts & Taluks
-    ("Mysuru", 12.2958, 76.6394),
+    ("Mysuru", 12.3156, 76.6172),   # GSSSIETW KRS Road, Mysuru
     ("Mandya", 12.5238, 76.8971),
     ("Hassan", 13.0072, 76.1030),
     ("Belagavi", 15.8497, 74.4977),

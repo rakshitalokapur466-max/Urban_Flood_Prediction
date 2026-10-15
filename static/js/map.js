@@ -71,8 +71,9 @@ function createRiskMarkerIcon(riskLevel) {
 
 /**
  * Renders the single interactive Leaflet map on result.html centered on the Karnataka place.
+ * @param {Array} hotspots - Optional flood hotspot objects [{name,lat,lon,note}]
  */
-function renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, probability, basinDesc = "") {
+function renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, probability, basinDesc = "", hotspots = []) {
     const mapContainer = document.getElementById("map");
     if (!mapContainer) return;
 
@@ -84,7 +85,7 @@ function renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, pr
         scrollWheelZoom: false,
         minZoom: 7,
         maxBounds: KARNATAKA_BOUNDS.pad(0.2)
-    }).setView([lat, lon], 12);
+    }).setView([lat, lon], 14);   // Zoom 14 = street-level accuracy
 
     // OpenStreetMap Free Tile Layer
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -135,6 +136,75 @@ function renderSingleLocationMap(lat, lon, locationName, riskLevel, rainfall, pr
     `;
 
     marker.bindPopup(popupContent).openPopup();
+
+    // ── Flood Hotspot Markers (e.g. Bharat Cancer Hospital drainage area) ─────
+    if (hotspots && hotspots.length > 0) {
+        const drainageIcon = L.divIcon({
+            className: "drainage-warning-pin",
+            html: `<div style="
+                width: 28px; height: 28px;
+                border-radius: 50%;
+                background: #f97316;
+                border: 3px solid #ffffff;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 13px;
+                box-shadow: 0 2px 8px rgba(249,115,22,0.65);
+                cursor: pointer;
+            ">\u26A0\uFE0F</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -16]
+        });
+
+        hotspots.forEach(hs => {
+            const hMarker = L.marker([hs.lat, hs.lon], { icon: drainageIcon }).addTo(map);
+            hMarker.bindPopup(`
+                <div style="font-family:'Poppins',sans-serif;min-width:200px;padding:6px;">
+                    <div style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:4px;">
+                        \u26A0\uFE0F Flood Hotspot
+                    </div>
+                    <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:4px;">
+                        ${hs.name}
+                    </div>
+                    <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                        ${hs.note}
+                    </div>
+                    <div style="margin-top:6px;font-size:10px;color:#94a3b8;">
+                        ${hs.lat.toFixed(4)}\u00B0N, ${hs.lon.toFixed(4)}\u00B0E
+                    </div>
+                </div>
+            `);
+
+            L.circle([hs.lat, hs.lon], {
+                color: "#f97316",
+                fillColor: "rgba(249,115,22,0.18)",
+                fillOpacity: 0.5,
+                weight: 1.5,
+                radius: 500,
+                dashArray: "6,4"
+            }).addTo(map);
+        });
+
+        // Legend
+        const legend = L.control({ position: "bottomleft" });
+        legend.onAdd = function () {
+            const div = L.DomUtil.create("div");
+            div.style.cssText = "background:rgba(255,255,255,0.96);padding:8px 12px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,0.18);";
+            div.innerHTML = `
+                <div style="font-weight:700;color:#1e293b;margin-bottom:5px;">Map Legend</div>
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
+                    <div style="width:12px;height:12px;border-radius:50%;background:${theme.primary};border:2px solid #fff;flex-shrink:0;"></div>
+                    <span style="color:#475569;">${locationName}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:12px;height:12px;border-radius:50%;background:#f97316;border:2px solid #fff;flex-shrink:0;"></div>
+                    <span style="color:#c2410c;font-weight:600;">Flood Hotspot / Drainage Risk</span>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+    }
 }
 
 /**

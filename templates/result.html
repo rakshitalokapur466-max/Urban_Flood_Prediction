@@ -210,7 +210,8 @@
     "rainfall": {{ pred.rainfall }},
     "probability": {{ pred.probability }},
     "basinDescription": {{ (zone_data.basin_description if zone_data else '')|tojson }},
-    "predictionId": {{ pred.id }}
+    "predictionId": {{ pred.id }},
+    "floodHotspots": {{ (zone_data.flood_hotspots if zone_data and zone_data.get('flood_hotspots') else [])|tojson }}
 }
 </script>
 
@@ -228,7 +229,8 @@
             report.riskLevel,
             report.rainfall,
             report.probability,
-            report.basinDescription
+            report.basinDescription,
+            report.floodHotspots || []
         );
     });
 

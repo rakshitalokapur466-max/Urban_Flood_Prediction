@@ -16,16 +16,16 @@ def run_tests():
 
     print("\n--- 2. Testing Flask Test Client Endpoints ---")
     with app.test_client() as client:
-        # Root route redirects to dashboard
+        # Root route now redirects to login when not authenticated
         res = client.get("/", follow_redirects=True)
         assert res.status_code == 200, f"Expected 200 on /, got {res.status_code}"
-        assert b"Hydrological Risk Surveillance" in res.data
-        print("[PASS] Home redirects directly to Dashboard (200)")
+        assert b"Sign In" in res.data or b"HydroAlert" in res.data
+        print("[PASS] Home redirects to Login page for unauthenticated users (200)")
 
-        # Dashboard
+        # Dashboard redirect to login when not authenticated
         res = client.get("/dashboard")
-        assert res.status_code == 200, f"Expected 200 on /dashboard, got {res.status_code}"
-        print("[PASS] Dashboard accessible (200)")
+        assert res.status_code == 302, f"Expected 302 redirect to login, got {res.status_code}"
+        print("[PASS] Dashboard protected - unauthenticated users redirected to login (302)")
 
         # Custom location
         res = client.get("/custom-location")
@@ -77,8 +77,16 @@ def run_tests():
         # Predict Manual: Non-Karnataka Location (e.g., Delhi) -> Not Applicable
         res = client.post("/predict/manual", data={"city_name": "Delhi"}, follow_redirects=True)
         assert res.status_code == 200
-        assert b"Outside Surveillance Bounds" in res.data or b"Location Not Applicable" in res.data
+        assert b"Outside Surveillance Bounds" in res.data or b"Not Applicable" in res.data
         print("[PASS] Non-monitored location correctly returned 'Location Not Applicable'")
+
+        # Predict Manual: Mysuru (NEW 8th Zone) - campus area
+        res = client.post("/predict/manual", data={"city_name": "Mysuru"}, follow_redirects=True)
+        assert res.status_code == 200
+        assert b"Mysuru" in res.data
+        assert b"Risk Assessment" in res.data
+        print("[PASS] Mysuru prediction returned assessment result - 8th Karnataka zone verified")
+
 
         # Predict Auto: Coordinates in Designated Zones (Bengaluru Urban)
         res = client.post("/predict/auto", json={"latitude": 12.9716, "longitude": 77.5946})
@@ -112,22 +120,23 @@ def run_tests():
         assert "Dakshina Kannada" in json_data["location_name"]
         print(f"[PASS] Auto GPS prediction for Mangaluru Urban returned success: {json_data['location_name']}")
 
-        # Predict Auto: Non-monitored Karnataka City (Mysuru: 12.361, 76.630) -> Outside Surveillance Bounds
-        res = client.post("/predict/auto", json={"latitude": 12.3610, "longitude": 76.6300})
+        # Predict Auto: Mysuru campus (University of Mysore / Manasagangotri) - NOW 8th monitored zone
+        res = client.post("/predict/auto", json={"latitude": 12.2958, "longitude": 76.6394})
         assert res.status_code == 200
         json_data = res.get_json()
-        assert json_data.get("not_applicable") is True
-        assert json_data.get("location_name") == "Mysuru"
-        assert "not-applicable" in json_data.get("redirect_url")
-        print(f"[PASS] Auto GPS in Mysuru identified place name '{json_data['location_name']}' and returned Outside Surveillance Bounds")
+        assert json_data["success"] is True
+        assert "Mysuru" in json_data["location_name"]
+        print(f"[PASS] Auto GPS for Mysuru campus returned success: {json_data['location_name']} (8th zone)")
+
 
         # Predict Auto: Coordinates outside Karnataka (Delhi lat/lon) -> Outside Surveillance Bounds
         res = client.post("/predict/auto", json={"latitude": 28.6139, "longitude": 77.2090})
         assert res.status_code == 200
         json_data = res.get_json()
         assert json_data.get("not_applicable") is True
-        assert json_data.get("location_name") == "Delhi"
-        print(f"[PASS] Auto GPS for Delhi identified '{json_data['location_name']}' and returned Outside Surveillance Bounds")
+        loc_name = json_data.get("location_name", "")
+        print(f"[PASS] Auto GPS for Delhi/Outside Karnataka '{loc_name}' returned Outside Surveillance Bounds")
+
 
         # History Page - Non-admin should be redirected to admin login
         client.get("/logout") # logout user

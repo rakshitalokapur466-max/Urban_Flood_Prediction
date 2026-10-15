@@ -133,6 +133,56 @@ KARNATAKA_MONITORED_ZONES = {
             "pressure": 992.0,
             "desc": "Cauvery headwaters, extreme rainfall zone - Heavy Inundation (High Risk)"
         }
+    },
+    "mysuru": {
+        "id": "mysuru",
+        "canonical_name": "Mysuru",
+        "district": "Mysuru",
+        "lat": 12.3156,
+        "lon": 76.6172,
+        "anchors": [
+            (12.3156, 76.6172),   # GSSSIETW – KRS Road, Mysuru (primary campus anchor)
+            (12.3100, 76.6234),   # Bharat Cancer Hospital drainage corridor – KRS Road / Irwin Rd junction
+            (12.3180, 76.6280),   # KRS Road flood-prone low-lying stretch
+            (12.3052, 76.6552),   # Mysuru City centre reference
+            (12.2958, 76.6394),   # Manasagangotri / University of Mysore campus
+            (12.3340, 76.6090),   # Vidyaranyapuram / KRS Road northern corridor
+            (12.2707, 76.6477)    # Mysuru South / Nanjangud Road
+        ],
+        "basin_description": "KRS Road drainage corridor & Cauvery basin flood plain – Bharat Cancer Hospital area flood risk",
+        "flood_hotspots": [
+            {
+                "name": "Bharat Cancer Hospital Drainage",
+                "lat": 12.3100,
+                "lon": 76.6234,
+                "note": "Chronic drainage overflow during rainfall – KRS Road / Irwin Road junction"
+            },
+            {
+                "name": "GSSSIETW Campus – KRS Road",
+                "lat": 12.3156,
+                "lon": 76.6172,
+                "note": "Low-lying campus area adjacent to drainage channel"
+            }
+        ],
+        "aliases": [
+            "mysuru", "mysore", "mysore city", "mysuru city",
+            "gsssietw", "gsssietw krs road", "krs road mysuru", "krs road",
+            "manasagangotri", "mysuru university", "university of mysore",
+            "jsss", "jsss college", "saraswathipuram", "vijayanagar mysuru",
+            "hebbal mysuru", "nazarbad", "jayalakshmipuram", "dattagalli",
+            "kuvempunagar", "bogadi", "nanjangud road", "siddhartha layout",
+            "yadavagiri", "jayanagar mysuru", "lakshmipuram mysuru",
+            "devaraja mysuru", "bannimantap", "infosys mysuru",
+            "bharat cancer hospital", "irwin road mysuru", "vidyaranyapuram"
+        ],
+        "default_weather": {
+            "rainfall": 22.5,
+            "humidity": 71.0,
+            "temp": 27.5,
+            "wind": 7.5,
+            "pressure": 1008.0,
+            "desc": "KRS Road corridor & Cauvery basin – Moderate Monsoon Activity, drainage stress at Bharat Cancer Hospital (Medium Risk)"
+        }
     }
 }
 
@@ -153,7 +203,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
 def match_karnataka_zone(city_name=None, lat=None, lon=None, max_zone_radius_km=MAX_ZONE_RADIUS_KM):
     """
     Validates if the requested city name or GPS coordinate corresponds strictly to
-    one of the 7 designated Karnataka flood monitoring regions:
+    one of the 8 designated Karnataka flood monitoring regions:
       - Bengaluru Urban (12.9716, 77.5946)
       - Dakshina Kannada (Mangaluru Urban) (12.9141, 74.8560)
       - Udupi Urban (13.3409, 74.7421)
@@ -161,6 +211,7 @@ def match_karnataka_zone(city_name=None, lat=None, lon=None, max_zone_radius_km=
       - Shivamogga (13.9299, 75.5681)
       - Chikkamagaluru (13.3161, 75.7720)
       - Kodagu (Madikeri) (12.4244, 75.7382)
+      - Mysuru (12.3052, 76.6552) — Cauvery basin & Kabini tributary flood plain
     Returns the zone dict if matched within designated boundaries, or None if Outside Surveillance Bounds.
     """
     # 1. City / District Name lookup

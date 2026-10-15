@@ -199,10 +199,13 @@ def admin_logout():
 # -------------------------------------------------------------
 @app.route("/")
 def home():
-    """Root entry point redirects directly to the main Risk Dashboard."""
-    return redirect(url_for("dashboard"))
+    """Root entry point: authenticated users go to dashboard, others go to login."""
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
     """Main resident user dashboard with dual action modes (Auto-fetch GPS & Manual Location)."""
     return render_template("dashboard.html")
